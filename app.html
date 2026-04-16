@@ -293,10 +293,28 @@
     .billing-banner.limit .billing-text strong { color: #FCA5A5; }
     .billing-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
     .billing-actions { display: flex; gap: 8px; align-items: center; }
-    .trial-dots { display: flex; gap: 3px; }
-    .trial-dot { width: 18px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); }
-    .trial-dot.used { background: #F59E0B; }
-    .billing-banner.limit .trial-dot.used { background: #EF4444; }
+    .trial-dots { display: flex; gap: 6px; margin-top: 8px; }
+    .trial-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      display: grid; place-items: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      transition: all 0.2s;
+    }
+    .trial-dot.used {
+      background: rgba(245,158,11,0.2);
+      border-color: rgba(245,158,11,0.5);
+      color: #FCD34D;
+    }
+    .billing-banner.limit .trial-dot.used {
+      background: rgba(239,68,68,0.2);
+      border-color: rgba(239,68,68,0.5);
+      color: #FCA5A5;
+    }
     @media (max-width: 640px) {
       .billing-banner { flex-direction: column; align-items: flex-start; }
     }
@@ -349,12 +367,14 @@
       <p>Informe os dados do veículo e cliente para gerar a parcela aproximada.</p>
     </div>
 
-    <div id="billingBanner" class="billing-banner hidden">
+    <div id="trialBanner" class="billing-banner hidden">
       <div>
-        <div class="billing-text" id="billingText"></div>
-        <div class="billing-meta" id="billingMeta"></div>
+        <div class="billing-text" id="trialBannerText"></div>
+        <div class="trial-dots" id="trialDots"></div>
       </div>
-      <div class="billing-actions" id="billingActions"></div>
+      <div class="billing-actions">
+        <button class="btn btn-primary" onclick="document.getElementById('upgradeModal').classList.add('open')">Fazer upgrade</button>
+      </div>
     </div>
 
     <div class="app-main">
@@ -753,19 +773,20 @@
 
       if (restante <= 0) {
         banner.classList.add('limit');
-        text.innerHTML = `<strong>Limite do trial atingido.</strong> Você usou ${limite} de ${limite} simulações. Faça upgrade para continuar.`;
+        text.innerHTML = `<strong>Limite atingido!</strong> Você usou <strong>${limite} de ${limite}</strong> simulações gratuitas. Faça upgrade para continuar.`;
         btn.disabled = true;
         btn.textContent = 'Limite atingido — faça upgrade';
       } else {
         banner.classList.remove('limit');
-        text.innerHTML = `Plano trial: <strong>${restante}</strong> de ${limite} simulações restantes.`;
+        text.innerHTML = `Você usou <strong>${usado} de ${limite}</strong> simulações gratuitas. Restam <strong>${restante}</strong>.`;
         btn.disabled = false;
         btn.textContent = 'Calcular parcela aproximada';
       }
 
-      dots.innerHTML = Array.from({ length: limite }, (_, i) =>
-        `<span class="trial-dot ${i < usado ? 'used' : ''}"></span>`
-      ).join('');
+      dots.innerHTML = Array.from({ length: limite }, (_, i) => {
+        const num = i + 1;
+        return `<span class="trial-dot ${i < usado ? 'used' : ''}">${num}</span>`;
+      }).join('');
     }
 
     function simular() {
@@ -1033,6 +1054,73 @@
       navigator.clipboard.writeText(txt).then(() => showToast('Copiado'));
     }
 
+    // ============ Modais ============
+    function fecharModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function formatarCartao(input) {
+      let v = input.value.replace(/\D/g, '').slice(0, 16);
+      input.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+    }
+
+    function formatarValidade(input) {
+      let v = input.value.replace(/\D/g, '').slice(0, 4);
+      if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
+      input.value = v;
+    }
+
+    function confirmarUpgrade() {
+      const nome = document.getElementById('upNome').value.trim();
+      const numero = document.getElementById('upNumero').value.replace(/\s/g, '');
+      if (!nome || numero.length < 16) return showToast('Preencha os dados do cartão');
+      const ultimos4 = numero.slice(-4);
+      const softCap = parseInt(document.getElementById('upSoftCap').value) || 300;
+      AUTH.upgradePro(session.userId, { cartaoUltimos4: ultimos4, cartaoNome: nome, softCap });
+      session.plano = 'pro';
+      fecharModal('upgradeModal');
+      renderTrialBanner();
+      showToast('Upgrade para Pro ativado!');
+    }
+
+    function cobrarAgora() {
+      AUTH.fecharFatura(session.userId);
+      abrirPlanoModal();
+      showToast('Fatura fechada (teste)');
+    }
+
+    function salvarSoftCap() {
+      const cap = parseInt(document.getElementById('planoSoftCap').value) || 300;
+      AUTH.updateUser(session.userId, { softCap: cap });
+      fecharModal('planoModal');
+      showToast('Limite de aviso salvo');
+    }
+
+    function abrirPlanoModal() {
+      const user = AUTH.getUser(session.userId);
+      if (!user) return;
+      const preco = APP_CONFIG.precoPorSimulacao || 1;
+      document.getElementById('planoSaldo').textContent = 'R$ ' + ((user.saldoTokens || 0) * preco).toFixed(2).replace('.', ',');
+      document.getElementById('planoProxima').textContent = user.proximaCobranca ? new Date(user.proximaCobranca).toLocaleDateString('pt-BR') : '—';
+      document.getElementById('planoCartao').textContent = user.cartaoUltimos4 ? '•••• ' + user.cartaoUltimos4 : '—';
+      document.getElementById('planoSoftCap').value = user.softCap || 300;
+
+      const lista = document.getElementById('faturasList');
+      const faturas = user.faturas || [];
+      if (faturas.length === 0) {
+        lista.innerHTML = '<div class="fatura-empty">Nenhuma fatura ainda.</div>';
+      } else {
+        lista.innerHTML = faturas.map(f => `
+          <div class="fatura-item">
+            <span>${new Date(f.data).toLocaleDateString('pt-BR')} — ${f.tokens} simulações</span>
+            <span class="valor">R$ ${f.valor.toFixed(2).replace('.', ',')}</span>
+            <span class="badge">${f.status}</span>
+          </div>
+        `).join('');
+      }
+      document.getElementById('planoModal').classList.add('open');
+    }
+
     // ============ Toast ============
     let toastTimer;
     function showToast(msg) {
@@ -1045,7 +1133,11 @@
 
     // ============ Keyboard ============
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') fecharEdicao();
+      if (e.key === 'Escape') {
+        fecharEdicao();
+        fecharModal('upgradeModal');
+        fecharModal('planoModal');
+      }
       if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'submit' && !document.getElementById('editModal').classList.contains('open')) {
         simular();
       }

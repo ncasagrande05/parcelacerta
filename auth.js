@@ -41,6 +41,7 @@ const AUTH = {
     const users = AUTH.getUsers();
     const user = users.find(u => u.id === userId);
     if (!user) return 0;
+    if (user.plano === 'admin') return user; // admin não gasta tokens
     user.simulacoesUsadas = (user.simulacoesUsadas || 0) + 1;
     if (user.plano === 'pro') {
       user.saldoTokens = (user.saldoTokens || 0) + 1;
@@ -119,5 +120,23 @@ const AUTH = {
     return session;
   },
 };
+
+// Criar conta admin na primeira carga (se não existir)
+(function seedAdmin() {
+  const users = AUTH.getUsers();
+  if (!users.some(u => u.email === 'admin@parcelacerta.com')) {
+    users.push({
+      id: 'u_admin',
+      email: 'admin@parcelacerta.com',
+      senha: 'pc2026',
+      lojaNome: 'ParcelaCerta',
+      lojaIniciais: 'PC',
+      plano: 'admin',
+      simulacoesUsadas: 0,
+      criadoEm: new Date().toISOString(),
+    });
+    AUTH.saveUsers(users);
+  }
+})();
 
 window.AUTH = AUTH;
