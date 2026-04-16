@@ -199,8 +199,8 @@
       white-space: nowrap;
     }
     .status-quente { background: rgba(16,185,129,0.15); color: var(--success); }
-    .status-nurturing { background: rgba(245,158,11,0.15); color: var(--warning); }
-    .status-lost { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .status-morno { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .status-perdido { background: rgba(239,68,68,0.15); color: var(--danger); }
     .status-pending { background: rgba(138,138,150,0.15); color: var(--text-muted); }
 
     .history-empty {
@@ -470,11 +470,11 @@
             <button class="btn btn-success" data-status="quente" onclick="registrarStatus('quente')">
               <span class="emoji">✅</span> Cliente topou — avançar no funil
             </button>
-            <button class="btn btn-warning" data-status="nurturing" onclick="registrarStatus('nurturing')">
-              <span class="emoji">⏸️</span> Não é o momento — nurturing
+            <button class="btn btn-warning" data-status="morno" onclick="registrarStatus('morno')">
+              <span class="emoji">⏸️</span> Não é o momento — morno
             </button>
-            <button class="btn btn-danger" data-status="lost" onclick="registrarStatus('lost')">
-              <span class="emoji">❌</span> Não topou — marcar como lost
+            <button class="btn btn-danger" data-status="perdido" onclick="registrarStatus('perdido')">
+              <span class="emoji">❌</span> Não topou — marcar como perdido
             </button>
           </div>
 
@@ -501,8 +501,8 @@
           <button class="filter-chip active" data-filter="all">Todas</button>
           <button class="filter-chip" data-filter="pending">Sem resposta</button>
           <button class="filter-chip" data-filter="quente">Quentes</button>
-          <button class="filter-chip" data-filter="nurturing">Nurturing</button>
-          <button class="filter-chip" data-filter="lost">Lost</button>
+          <button class="filter-chip" data-filter="morno">Morno</button>
+          <button class="filter-chip" data-filter="perdido">Perdido</button>
         </div>
         <div id="historyList" class="history-list"></div>
       </div>
@@ -650,8 +650,8 @@
         <select id="editStatus">
           <option value="pending">Sem resposta</option>
           <option value="quente">Quente — avançar no funil</option>
-          <option value="nurturing">Nurturing — não é o momento</option>
-          <option value="lost">Lost — não topou</option>
+          <option value="morno">Morno — não é o momento</option>
+          <option value="perdido">Perdido — não topou</option>
         </select>
       </div>
 
@@ -847,8 +847,8 @@
       const msgs = {
         pending: 'Seleção removida',
         quente: 'Lead marcado como quente',
-        nurturing: 'Lead em nurturing',
-        lost: 'Lead marcado como lost'
+        morno: 'Lead marcado como morno',
+        perdido: 'Lead marcado como perdido'
       };
       showToast(msgs[novoStatus]);
       atualizarFunnelUI();
@@ -871,8 +871,8 @@
         return;
       }
 
-      const statusLabel = { pending: 'Sem resposta', quente: 'Quente', nurturing: 'Nurturing', lost: 'Lost' };
-      const statusClass = { pending: 'status-pending', quente: 'status-quente', nurturing: 'status-nurturing', lost: 'status-lost' };
+      const statusLabel = { pending: 'Sem resposta', quente: 'Quente', morno: 'Morno', perdido: 'Perdido' };
+      const statusClass = { pending: 'status-pending', quente: 'status-quente', morno: 'status-morno', perdido: 'status-perdido' };
 
       list.innerHTML = h.map(s => {
         const nome = s.leadNome || 'Cliente sem nome';
