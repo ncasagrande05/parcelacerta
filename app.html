@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0B0B0F">
+  <title>Simulador · ParcelaCerta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { padding-bottom: 48px; }
+
+    .app-main {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 20px;
+      padding-top: 28px;
+    }
+    @media (max-width: 900px) {
+      .app-main { grid-template-columns: 1fr; }
+    }
+
+    .hero-mini { margin-bottom: 16px; }
+    .hero-mini h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .hero-mini p {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-top: 4px;
+    }
+
+    /* Form column */
+    .form-col .card + .card { margin-top: 12px; }
+
+    /* Lead info */
+    .lead-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 640px) { .lead-grid { grid-template-columns: 1fr; } }
+
+    /* Result column */
+    .result-empty {
+      background: var(--card);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 60px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .result-empty svg { width: 36px; height: 36px; margin-bottom: 12px; opacity: 0.5; }
+
+    .result-card {
+      background: linear-gradient(180deg, var(--card), var(--bg));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      position: sticky;
+      top: 20px;
+    }
+    .result-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .result-parcela {
+      font-size: clamp(2.4rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+      line-height: 1;
+    }
+    .result-parcela .slash {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.45em;
+      margin-left: 6px;
+    }
+    .result-faixa {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+    .result-faixa strong { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+    .result-detail {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .detail-item .k {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+    .detail-item .v {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .funnel-title {
+      margin-top: 22px;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .funnel-actions { display: flex; flex-direction: column; gap: 8px; }
+    .funnel-actions .btn { justify-content: flex-start; padding: 12px 14px; opacity: 0.85; transition: opacity 0.15s, box-shadow 0.15s, transform 0.05s; }
+    .funnel-actions .btn:hover { opacity: 1; }
+    .funnel-actions .btn.is-active { opacity: 1; box-shadow: 0 0 0 2px currentColor inset, 0 4px 14px rgba(0,0,0,0.25); }
+    .funnel-actions .btn .emoji { font-size: 1.1rem; }
+
+    .share-row {
+      display: flex; gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .share-row .btn { flex: 1; }
+
+    .disclaimer {
+      margin-top: 14px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    /* History */
+    .history-section { margin-top: 40px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 14px;
+      align-items: center;
+      transition: border-color 0.15s;
+    }
+    .history-item:hover { border-color: var(--border-strong); }
+    .history-actions { display: flex; gap: 4px; }
+    .history-actions button {
+      width: 30px; height: 30px;
+      border-radius: 7px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: grid; place-items: center;
+      transition: all 0.15s;
+    }
+    .history-actions button:hover { color: var(--text); border-color: var(--border-strong); }
+    .history-actions button.delete:hover { color: var(--danger); border-color: var(--danger); }
+    .history-actions svg { width: 14px; height: 14px; }
+    @media (max-width: 640px) {
+      .history-item { grid-template-columns: 1fr auto; gap: 8px; }
+      .history-parcela, .history-status { grid-column: 1; }
+    }
+    .history-info .lead-name { font-weight: 600; font-size: 0.95rem; }
+    .history-info .lead-meta {
+      color: var(--text-muted); font-size: 0.8rem;
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .history-parcela {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.95rem;
+      text-align: right;
+    }
+    @media (max-width: 640px) { .history-parcela { text-align: left; } }
+
+    .history-status {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .status-quente { background: rgba(16,185,129,0.15); color: var(--success); }
+    .status-nurturing { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .status-lost { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .status-pending { background: rgba(138,138,150,0.15); color: var(--text-muted); }
+
+    .history-empty {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-dim);
+      font-size: 0.88rem;
+    }
+
+    .history-filter {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .filter-chip.active {
+      background: var(--accent-soft);
+      border-color: rgba(59,130,246,0.4);
+      color: #93C5FD;
+    }
+
+    /* User menu */
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px 6px 6px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+    .user-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #1D4ED8);
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .user-chip .user-name {
+      font-size: 0.82rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .user-chip .logout {
+      background: none; border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0 4px;
+      font-size: 0.78rem;
+      font-family: inherit;
+    }
+    .user-chip .logout:hover { color: var(--danger); }
+
+    @media (max-width: 560px) {
+      .user-chip .user-name { display: none; }
+    }
+
+    /* Billing banner (trial + pro) */
+    .billing-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      font-size: 0.88rem;
+      flex-wrap: wrap;
+    }
+    .billing-banner.limit, .billing-banner.overdue { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.3); }
+    .billing-banner.pro { background: rgba(59,130,246,0.05); border-color: rgba(59,130,246,0.25); }
+    .billing-banner.pro.cap { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.3); }
+    .billing-text strong { color: #FCD34D; font-variant-numeric: tabular-nums; }
+    .billing-banner.pro .billing-text strong { color: #93C5FD; }
+    .billing-banner.pro.cap .billing-text strong { color: #FCD34D; }
+    .billing-banner.limit .billing-text strong { color: #FCA5A5; }
+    .billing-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
+    .billing-actions { display: flex; gap: 8px; align-items: center; }
+    .trial-dots { display: flex; gap: 3px; }
+    .trial-dot { width: 18px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); }
+    .trial-dot.used { background: #F59E0B; }
+    .billing-banner.limit .trial-dot.used { background: #EF4444; }
+    @media (max-width: 640px) {
+      .billing-banner { flex-direction: column; align-items: flex-start; }
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+    /* Faturas list */
+    .fatura-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+    .fatura-item .valor { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .fatura-item .badge {
+      padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 600;
+      background: rgba(16,185,129,0.15); color: var(--success);
+    }
+    .fatura-empty { padding: 20px; text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  <nav class="container nav nav-sticky">
+    <a href="app.html" class="brand">
+      <div class="brand-logo" id="brandLogo">PC</div>
+      <div class="brand-text">
+        <div class="name" id="brandName">ParcelaCerta</div>
+        <div class="tag">Simulador</div>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <span class="user-name" id="userLoja"></span>
+        <button class="logout" onclick="AUTH.logout()">Sair</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <div class="hero-mini mt-4">
+      <h1>Simulação rápida</h1>
+      <p>Informe os dados do veículo e cliente para gerar a parcela aproximada.</p>
+    </div>
+
+    <div id="billingBanner" class="billing-banner hidden">
+      <div>
+        <div class="billing-text" id="billingText"></div>
+        <div class="billing-meta" id="billingMeta"></div>
+      </div>
+      <div class="billing-actions" id="billingActions"></div>
+    </div>
+
+    <div class="app-main">
+
+      <!-- FORM COLUMN -->
+      <div class="form-col">
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Cliente</span></div>
+          <div class="lead-grid">
+            <div class="form-group">
+              <label>Nome do cliente (opcional)</label>
+              <input type="text" id="leadNome" placeholder="Ex: João Silva">
+            </div>
+            <div class="form-group">
+              <label>Telefone (opcional)</label>
+              <input type="text" id="leadFone" placeholder="(11) 90000-0000">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Veículo</span></div>
+          <div class="form-grid triple">
+            <div class="form-group">
+              <label>Valor do Veículo (R$)</label>
+              <input type="text" id="valorVeiculo" inputmode="decimal" placeholder="Ex: 50.000,00" oninput="formatarMoeda(this)">
+            </div>
+            <div class="form-group">
+              <label>Parcelas</label>
+              <select id="parcelas">
+                <option value="12">12x</option>
+                <option value="24">24x</option>
+                <option value="36">36x</option>
+                <option value="48" selected>48x</option>
+                <option value="60">60x</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Modelo (opcional)</label>
+              <input type="text" id="modelo" placeholder="Ex: HB20 2020">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Entrada</span></div>
+          <div class="segmented">
+            <button id="btn-sem" class="active" onclick="setEntrada('sem')">Sem</button>
+            <button id="btn-dinheiro" onclick="setEntrada('dinheiro')">Dinheiro</button>
+            <button id="btn-veiculo" onclick="setEntrada('veiculo')">Veículo</button>
+            <button id="btn-ambos" onclick="setEntrada('ambos')">Ambos</button>
+          </div>
+
+          <div id="fields-dinheiro" class="entrada-fields form-grid">
+            <div class="form-group">
+              <label>Valor da Entrada (R$)</label>
+              <input type="text" id="entradaDinheiro" inputmode="decimal" placeholder="Ex: 10.000,00" oninput="formatarMoeda(this)">
+            </div>
+          </div>
+
+          <div id="fields-veiculo" class="entrada-fields form-grid">
+            <div class="form-group">
+              <label>Valor do Veículo (R$)</label>
+              <input type="text" id="entradaVeiculo" inputmode="decimal" placeholder="Valor negociado" oninput="formatarMoeda(this)">
+            </div>
+            <div class="form-group">
+              <label>Saldo Devedor (R$)</label>
+              <input type="text" id="saldoDevedor" inputmode="decimal" placeholder="0,00" oninput="formatarMoeda(this)">
+            </div>
+          </div>
+
+          <div id="fields-ambos" class="entrada-fields form-grid">
+            <div class="form-group">
+              <label>Dinheiro (R$)</label>
+              <input type="text" id="entradaDinheiroAmbos" inputmode="decimal" placeholder="Ex: 5.000,00" oninput="formatarMoeda(this)">
+            </div>
+            <div class="form-group">
+              <label>Valor do Veículo (R$)</label>
+              <input type="text" id="entradaVeiculoAmbos" inputmode="decimal" placeholder="Valor negociado" oninput="formatarMoeda(this)">
+            </div>
+            <div class="form-group">
+              <label>Saldo Devedor (R$)</label>
+              <input type="text" id="saldoDevedorAmbos" inputmode="decimal" placeholder="0,00" oninput="formatarMoeda(this)">
+            </div>
+          </div>
+        </div>
+
+        <button id="btnSimular" class="btn btn-primary btn-block btn-lg mt-3" onclick="simular()">Calcular parcela aproximada</button>
+      </div>
+
+      <!-- RESULT COLUMN -->
+      <div class="result-col">
+        <div id="resultEmpty" class="result-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg>
+          <div>Preencha os dados e clique em <strong>calcular</strong> para ver a parcela aproximada.</div>
+        </div>
+
+        <div id="resultCard" class="result-card hidden">
+          <div class="result-label">Parcela aproximada</div>
+          <div class="result-parcela"><span id="resParcela">—</span><span class="slash" id="resSlash"></span></div>
+          <div class="result-faixa">Faixa estimada: <strong id="resFaixa">—</strong></div>
+
+          <div class="result-detail">
+            <div class="detail-item"><div class="k">Veículo</div><div class="v" id="resVeiculo">—</div></div>
+            <div class="detail-item"><div class="k">Entrada</div><div class="v" id="resEntrada">—</div></div>
+            <div class="detail-item"><div class="k">Financiado</div><div class="v" id="resFinanciado">—</div></div>
+            <div class="detail-item"><div class="k">Prazo</div><div class="v" id="resPrazo">—</div></div>
+          </div>
+
+          <div class="funnel-title">Resposta do cliente</div>
+          <div class="funnel-actions">
+            <button class="btn btn-success" data-status="quente" onclick="registrarStatus('quente')">
+              <span class="emoji">✅</span> Cliente topou — avançar no funil
+            </button>
+            <button class="btn btn-warning" data-status="nurturing" onclick="registrarStatus('nurturing')">
+              <span class="emoji">⏸️</span> Não é o momento — nurturing
+            </button>
+            <button class="btn btn-danger" data-status="lost" onclick="registrarStatus('lost')">
+              <span class="emoji">❌</span> Não topou — marcar como lost
+            </button>
+          </div>
+
+          <div class="share-row">
+            <button class="btn btn-secondary" onclick="compartilharWhatsApp()">WhatsApp</button>
+            <button class="btn btn-secondary" onclick="copiarTexto()">Copiar</button>
+          </div>
+
+          <div class="disclaimer">
+            Valor ilustrativo baseado em estimativa de mercado. Não constitui oferta. Condições reais dependem de análise de crédito.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <section class="history-section">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Histórico de simulações</span>
+          <button class="card-link" onclick="limparHistorico()">Limpar histórico</button>
+        </div>
+        <div class="history-filter mb-3" id="historyFilter">
+          <button class="filter-chip active" data-filter="all">Todas</button>
+          <button class="filter-chip" data-filter="pending">Sem resposta</button>
+          <button class="filter-chip" data-filter="quente">Quentes</button>
+          <button class="filter-chip" data-filter="nurturing">Nurturing</button>
+          <button class="filter-chip" data-filter="lost">Lost</button>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal upgrade pro -->
+  <div class="modal-overlay" id="upgradeModal" onclick="if(event.target.id==='upgradeModal')fecharModal('upgradeModal')">
+    <div class="modal">
+      <h3>Fazer upgrade para Pro</h3>
+      <p class="subtitle">R$ 1,00 por simulação. Cobrança apenas sobre o que usar, ao final do ciclo de 30 dias.</p>
+
+      <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 18px;">
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">Como funciona</div>
+        <ul style="list-style: none; font-size: 0.85rem; line-height: 1.8; color: var(--text);">
+          <li>• Cada simulação adiciona R$ 1,00 ao saldo do ciclo</li>
+          <li>• A cada 30 dias, o saldo é cobrado no cartão cadastrado</li>
+          <li>• Aviso quando o saldo cruza o limite configurado</li>
+          <li>• Sem mínimo mensal, sem taxa de adesão</li>
+        </ul>
+      </div>
+
+      <div class="form-group">
+        <label>Nome impresso no cartão</label>
+        <input type="text" id="upNome" placeholder="NOME COMO NO CARTÃO">
+      </div>
+      <div class="form-group mt-3">
+        <label>Número do cartão</label>
+        <input type="text" id="upNumero" inputmode="numeric" maxlength="19" placeholder="0000 0000 0000 0000" oninput="formatarCartao(this)">
+      </div>
+      <div class="form-grid mt-3">
+        <div class="form-group">
+          <label>Validade (MM/AA)</label>
+          <input type="text" id="upValidade" inputmode="numeric" maxlength="5" placeholder="12/28" oninput="formatarValidade(this)">
+        </div>
+        <div class="form-group">
+          <label>CVV</label>
+          <input type="text" id="upCVV" inputmode="numeric" maxlength="4" placeholder="000">
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <label>Limite de aviso (R$)</label>
+        <input type="number" id="upSoftCap" min="0" step="10" value="300">
+        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Avisamos quando o saldo do ciclo ultrapassar este valor.</div>
+      </div>
+
+      <div style="background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 14px; font-size: 0.72rem; color: #FCD34D; line-height: 1.5;">
+        <strong>Protótipo:</strong> os dados do cartão não são enviados a nenhum servidor. Em produção serão processados via gateway (Asaas/Pagar.me/Stripe) com tokenização PCI-compliant.
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModal('upgradeModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarUpgrade()">Ativar Pro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal gerenciar plano -->
+  <div class="modal-overlay" id="planoModal" onclick="if(event.target.id==='planoModal')fecharModal('planoModal')">
+    <div class="modal">
+      <h3>Plano Pro</h3>
+      <p class="subtitle" id="planoSubtitle">Gerencie seu plano, cartão e histórico de cobranças.</p>
+
+      <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Saldo do ciclo atual</span>
+          <span style="font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums;" id="planoSaldo">R$ 0,00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
+          <span>Próxima cobrança</span>
+          <span id="planoProxima">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.8rem; color: var(--text-muted);">
+          <span>Cartão</span>
+          <span id="planoCartao">—</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Limite de aviso (R$)</label>
+        <input type="number" id="planoSoftCap" min="0" step="10">
+        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Avisamos quando o saldo do ciclo ultrapassar este valor.</div>
+      </div>
+
+      <div class="card-header mt-4" style="margin-bottom: 8px;">
+        <span class="card-title">Faturas</span>
+      </div>
+      <div id="faturasList"></div>
+
+      <div class="modal-actions" style="margin-top: 18px;">
+        <button class="btn btn-danger" onclick="cobrarAgora()" style="margin-right: auto;">Cobrar agora (teste)</button>
+        <button class="btn btn-secondary" onclick="fecharModal('planoModal')">Fechar</button>
+        <button class="btn btn-primary" onclick="salvarSoftCap()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal edição -->
+  <div class="modal-overlay" id="editModal" onclick="if(event.target.id==='editModal')fecharEdicao()">
+    <div class="modal">
+      <h3>Editar simulação</h3>
+      <p class="subtitle">Altere os dados do cliente, do veículo ou o status do lead.</p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nome do cliente</label>
+          <input type="text" id="editNome" placeholder="Nome">
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="editFone" placeholder="(11) 90000-0000">
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <label>Modelo do veículo</label>
+        <input type="text" id="editModelo" placeholder="Ex: HB20 2020">
+      </div>
+
+      <div class="form-grid triple mt-3">
+        <div class="form-group">
+          <label>Valor (R$)</label>
+          <input type="text" id="editValor" inputmode="decimal" oninput="formatarMoeda(this)">
+        </div>
+        <div class="form-group">
+          <label>Entrada (R$)</label>
+          <input type="text" id="editEntrada" inputmode="decimal" oninput="formatarMoeda(this)">
+        </div>
+        <div class="form-group">
+          <label>Parcelas</label>
+          <select id="editParcelas">
+            <option value="12">12x</option>
+            <option value="24">24x</option>
+            <option value="36">36x</option>
+            <option value="48">48x</option>
+            <option value="60">60x</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group mt-3">
+        <label>Status do lead</label>
+        <select id="editStatus">
+          <option value="pending">Sem resposta</option>
+          <option value="quente">Quente — avançar no funil</option>
+          <option value="nurturing">Nurturing — não é o momento</option>
+          <option value="lost">Lost — não topou</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger" onclick="excluirDoModal()" style="margin-right:auto">Excluir</button>
+        <button class="btn btn-secondary" onclick="fecharEdicao()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarEdicao()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // ============ Init / auth guard ============
+    const session = AUTH.require();
+    if (!session) throw new Error('no session');
+
+    document.getElementById('userLoja').textContent = session.lojaNome;
+    document.getElementById('userAvatar').textContent = session.lojaIniciais;
+
+    // ============ State ============
+    let entradaTipo = 'sem';
+    let ultimaSimulacao = null; // { id, ... }
+    let filtroHistorico = 'all';
+
+    // ============ Format ============
+    function formatarMoeda(input) {
+      let v = input.value.replace(/\D/g, '');
+      if (!v) { input.value = ''; return; }
+      v = (parseInt(v) / 100).toFixed(2);
+      v = v.replace('.', ',');
+      v = v.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      input.value = v;
+    }
+    function parseMoeda(str) {
+      if (!str) return 0;
+      return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+    }
+    function formatBRL(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+
+    // ============ Entrada ============
+    function setEntrada(tipo) {
+      entradaTipo = tipo;
+      document.querySelectorAll('.segmented button').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-${tipo}`).classList.add('active');
+      document.querySelectorAll('.entrada-fields').forEach(f => f.classList.remove('visible'));
+      if (tipo === 'dinheiro') document.getElementById('fields-dinheiro').classList.add('visible');
+      else if (tipo === 'veiculo') document.getElementById('fields-veiculo').classList.add('visible');
+      else if (tipo === 'ambos') document.getElementById('fields-ambos').classList.add('visible');
+    }
+
+    function calcularEntrada() {
+      if (entradaTipo === 'dinheiro') return parseMoeda(document.getElementById('entradaDinheiro').value);
+      if (entradaTipo === 'veiculo') {
+        return Math.max(0, parseMoeda(document.getElementById('entradaVeiculo').value) - parseMoeda(document.getElementById('saldoDevedor').value));
+      }
+      if (entradaTipo === 'ambos') {
+        const d = parseMoeda(document.getElementById('entradaDinheiroAmbos').value);
+        const v = parseMoeda(document.getElementById('entradaVeiculoAmbos').value);
+        const s = parseMoeda(document.getElementById('saldoDevedorAmbos').value);
+        return d + Math.max(0, v - s);
+      }
+      return 0;
+    }
+
+    // ============ Calc ============
+    function calcularParcela(pv, taxa, n) {
+      const r = taxa / 100;
+      if (r === 0) return pv / n;
+      return pv * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    }
+
+    function trialBloqueado() {
+      const user = AUTH.getUser(session.userId);
+      if (!user || user.plano !== 'trial') return false;
+      return (user.simulacoesUsadas || 0) >= APP_CONFIG.trialLimit;
+    }
+
+    function renderTrialBanner() {
+      const user = AUTH.getUser(session.userId);
+      const banner = document.getElementById('trialBanner');
+      const text = document.getElementById('trialBannerText');
+      const dots = document.getElementById('trialDots');
+      const btn = document.getElementById('btnSimular');
+
+      if (!user || user.plano !== 'trial') {
+        banner.classList.add('hidden');
+        btn.disabled = false;
+        return;
+      }
+
+      const limite = APP_CONFIG.trialLimit;
+      const usado = Math.min(user.simulacoesUsadas || 0, limite);
+      const restante = limite - usado;
+      banner.classList.remove('hidden');
+
+      if (restante <= 0) {
+        banner.classList.add('limit');
+        text.innerHTML = `<strong>Limite do trial atingido.</strong> Você usou ${limite} de ${limite} simulações. Faça upgrade para continuar.`;
+        btn.disabled = true;
+        btn.textContent = 'Limite atingido — faça upgrade';
+      } else {
+        banner.classList.remove('limit');
+        text.innerHTML = `Plano trial: <strong>${restante}</strong> de ${limite} simulações restantes.`;
+        btn.disabled = false;
+        btn.textContent = 'Calcular parcela aproximada';
+      }
+
+      dots.innerHTML = Array.from({ length: limite }, (_, i) =>
+        `<span class="trial-dot ${i < usado ? 'used' : ''}"></span>`
+      ).join('');
+    }
+
+    function simular() {
+      if (trialBloqueado()) {
+        showToast('Limite de simulações do trial atingido');
+        return;
+      }
+      const valorVeiculo = parseMoeda(document.getElementById('valorVeiculo').value);
+      if (valorVeiculo <= 0) return showToast('Informe o valor do veículo');
+
+      const nParcelas = parseInt(document.getElementById('parcelas').value);
+      const entrada = calcularEntrada();
+      if (entrada >= valorVeiculo) return showToast('Entrada maior ou igual ao valor do veículo');
+
+      const financiado = valorVeiculo - entrada;
+      const taxa = APP_CONFIG.taxaMediaMensal;
+      const parcela = calcularParcela(financiado, taxa, nParcelas);
+      const spread = APP_CONFIG.spreadFaixa;
+      const parcelaMin = parcela * (1 - spread);
+      const parcelaMax = parcela * (1 + spread);
+
+      const sim = {
+        id: 's_' + Date.now(),
+        data: new Date().toISOString(),
+        leadNome: document.getElementById('leadNome').value.trim(),
+        leadFone: document.getElementById('leadFone').value.trim(),
+        modelo: document.getElementById('modelo').value.trim(),
+        valorVeiculo, entrada, financiado, nParcelas, parcela, parcelaMin, parcelaMax,
+        status: 'pending',
+      };
+
+      ultimaSimulacao = sim;
+      salvarHistorico(sim);
+      AUTH.incrementSimulacoes(session.userId);
+      renderResultado(sim);
+      atualizarFunnelUI();
+      renderHistorico();
+      renderTrialBanner();
+      showToast('Simulação gerada');
+    }
+
+    function renderResultado(sim) {
+      document.getElementById('resultEmpty').classList.add('hidden');
+      document.getElementById('resultCard').classList.remove('hidden');
+      document.getElementById('resParcela').textContent = formatBRL(sim.parcela);
+      document.getElementById('resSlash').textContent = `/mês em ${sim.nParcelas}x`;
+      document.getElementById('resFaixa').textContent = `${formatBRL(sim.parcelaMin)} – ${formatBRL(sim.parcelaMax)}`;
+      document.getElementById('resVeiculo').textContent = formatBRL(sim.valorVeiculo);
+      document.getElementById('resEntrada').textContent = formatBRL(sim.entrada);
+      document.getElementById('resFinanciado').textContent = formatBRL(sim.financiado);
+      document.getElementById('resPrazo').textContent = `${sim.nParcelas}x`;
+    }
+
+    // ============ Histórico ============
+    function keyHist() { return 'pc_hist_' + session.userId; }
+
+    function getHistorico() {
+      try { return JSON.parse(localStorage.getItem(keyHist())) || []; } catch { return []; }
+    }
+    function setHistorico(h) { localStorage.setItem(keyHist(), JSON.stringify(h)); }
+
+    function salvarHistorico(sim) {
+      const h = getHistorico();
+      h.unshift(sim);
+      setHistorico(h.slice(0, 100));
+    }
+
+    function atualizarStatus(id, status) {
+      const h = getHistorico();
+      const item = h.find(s => s.id === id);
+      if (item) { item.status = status; setHistorico(h); }
+    }
+
+    function registrarStatus(status) {
+      if (!ultimaSimulacao) return;
+      const novoStatus = ultimaSimulacao.status === status ? 'pending' : status;
+      ultimaSimulacao.status = novoStatus;
+      atualizarStatus(ultimaSimulacao.id, novoStatus);
+      const msgs = {
+        pending: 'Seleção removida',
+        quente: 'Lead marcado como quente',
+        nurturing: 'Lead em nurturing',
+        lost: 'Lead marcado como lost'
+      };
+      showToast(msgs[novoStatus]);
+      atualizarFunnelUI();
+      renderHistorico();
+    }
+
+    function atualizarFunnelUI() {
+      const status = ultimaSimulacao?.status || 'pending';
+      document.querySelectorAll('.funnel-actions .btn').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.status === status);
+      });
+    }
+
+    function renderHistorico() {
+      const list = document.getElementById('historyList');
+      const h = getHistorico().filter(s => filtroHistorico === 'all' || s.status === filtroHistorico);
+
+      if (h.length === 0) {
+        list.innerHTML = '<div class="history-empty">Nenhuma simulação neste filtro.</div>';
+        return;
+      }
+
+      const statusLabel = { pending: 'Sem resposta', quente: 'Quente', nurturing: 'Nurturing', lost: 'Lost' };
+      const statusClass = { pending: 'status-pending', quente: 'status-quente', nurturing: 'status-nurturing', lost: 'status-lost' };
+
+      list.innerHTML = h.map(s => {
+        const nome = s.leadNome || 'Cliente sem nome';
+        const dt = new Date(s.data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const modeloTxt = s.modelo ? ` · ${s.modelo}` : '';
+        return `
+          <div class="history-item">
+            <div class="history-info">
+              <div class="lead-name">${escapeHtml(nome)}</div>
+              <div class="lead-meta">${dt} · ${formatBRL(s.valorVeiculo)}${escapeHtml(modeloTxt)}</div>
+            </div>
+            <div class="history-parcela">${formatBRL(s.parcela)} <span style="color:var(--text-muted);font-weight:400">/${s.nParcelas}x</span></div>
+            <span class="history-status ${statusClass[s.status]}">${statusLabel[s.status]}</span>
+            <div class="history-actions">
+              <button title="Editar" onclick="abrirEdicao('${s.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="delete" title="Excluir" onclick="excluirItem('${s.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    let editandoId = null;
+
+    function formatarValorNoInput(input, valor) {
+      if (!valor || valor <= 0) { input.value = ''; return; }
+      input.value = valor.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function abrirEdicao(id) {
+      const sim = getHistorico().find(s => s.id === id);
+      if (!sim) return;
+      editandoId = id;
+      document.getElementById('editNome').value = sim.leadNome || '';
+      document.getElementById('editFone').value = sim.leadFone || '';
+      document.getElementById('editModelo').value = sim.modelo || '';
+      formatarValorNoInput(document.getElementById('editValor'), sim.valorVeiculo);
+      formatarValorNoInput(document.getElementById('editEntrada'), sim.entrada);
+      document.getElementById('editParcelas').value = sim.nParcelas;
+      document.getElementById('editStatus').value = sim.status;
+      document.getElementById('editModal').classList.add('open');
+    }
+
+    function fecharEdicao() {
+      document.getElementById('editModal').classList.remove('open');
+      editandoId = null;
+    }
+
+    function salvarEdicao() {
+      if (!editandoId) return;
+      const h = getHistorico();
+      const sim = h.find(s => s.id === editandoId);
+      if (!sim) return;
+
+      const valorVeiculo = parseMoeda(document.getElementById('editValor').value);
+      const entrada = parseMoeda(document.getElementById('editEntrada').value);
+      if (valorVeiculo <= 0) return showToast('Informe o valor do veículo');
+      if (entrada >= valorVeiculo) return showToast('Entrada maior ou igual ao veículo');
+
+      const nParcelas = parseInt(document.getElementById('editParcelas').value);
+      const financiado = valorVeiculo - entrada;
+      const taxa = APP_CONFIG.taxaMediaMensal;
+      const parcela = calcularParcela(financiado, taxa, nParcelas);
+      const spread = APP_CONFIG.spreadFaixa;
+
+      sim.leadNome = document.getElementById('editNome').value.trim();
+      sim.leadFone = document.getElementById('editFone').value.trim();
+      sim.modelo = document.getElementById('editModelo').value.trim();
+      sim.valorVeiculo = valorVeiculo;
+      sim.entrada = entrada;
+      sim.financiado = financiado;
+      sim.nParcelas = nParcelas;
+      sim.parcela = parcela;
+      sim.parcelaMin = parcela * (1 - spread);
+      sim.parcelaMax = parcela * (1 + spread);
+      sim.status = document.getElementById('editStatus').value;
+
+      setHistorico(h);
+
+      if (ultimaSimulacao && ultimaSimulacao.id === editandoId) {
+        ultimaSimulacao = sim;
+        renderResultado(sim);
+        atualizarFunnelUI();
+      }
+
+      fecharEdicao();
+      renderHistorico();
+      showToast('Simulação atualizada');
+    }
+
+    function excluirDoModal() {
+      if (!editandoId) return;
+      const id = editandoId;
+      fecharEdicao();
+      excluirItem(id);
+    }
+
+    function excluirItem(id) {
+      if (!confirm('Excluir esta simulação do histórico?')) return;
+      const h = getHistorico().filter(s => s.id !== id);
+      setHistorico(h);
+      if (ultimaSimulacao && ultimaSimulacao.id === id) {
+        ultimaSimulacao = null;
+        document.getElementById('resultCard').classList.add('hidden');
+        document.getElementById('resultEmpty').classList.remove('hidden');
+      }
+      renderHistorico();
+      showToast('Simulação excluída');
+    }
+
+    function limparHistorico() {
+      if (!confirm('Apagar todo o histórico de simulações?')) return;
+      setHistorico([]);
+      renderHistorico();
+      showToast('Histórico limpo');
+    }
+
+    document.getElementById('historyFilter').addEventListener('click', e => {
+      if (!e.target.classList.contains('filter-chip')) return;
+      filtroHistorico = e.target.dataset.filter;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c === e.target));
+      renderHistorico();
+    });
+
+    // ============ Share ============
+    function textoResultado() {
+      if (!ultimaSimulacao) return '';
+      const s = ultimaSimulacao;
+      const nome = s.leadNome ? `Olá ${s.leadNome}, ` : '';
+      let txt = `${nome}segue a estimativa aproximada:\n\n`;
+      if (s.modelo) txt += `🚗 *${s.modelo}*\n`;
+      txt += `Valor do veículo: ${formatBRL(s.valorVeiculo)}\n`;
+      if (s.entrada > 0) txt += `Entrada: ${formatBRL(s.entrada)}\n`;
+      txt += `Financiado: ${formatBRL(s.financiado)}\n`;
+      txt += `\n*Parcela aproximada: ${formatBRL(s.parcela)} em ${s.nParcelas}x*\n`;
+      txt += `(faixa estimada: ${formatBRL(s.parcelaMin)} a ${formatBRL(s.parcelaMax)})\n\n`;
+      txt += `_Valor ilustrativo. Proposta real depende de análise de crédito._`;
+      return txt;
+    }
+
+    function compartilharWhatsApp() {
+      const txt = textoResultado();
+      if (!txt) return;
+      const fone = ultimaSimulacao.leadFone.replace(/\D/g, '');
+      const base = fone ? `https://wa.me/55${fone}` : 'https://wa.me/';
+      window.open(`${base}?text=${encodeURIComponent(txt)}`, '_blank');
+    }
+
+    function copiarTexto() {
+      const txt = textoResultado();
+      if (!txt) return;
+      navigator.clipboard.writeText(txt).then(() => showToast('Copiado'));
+    }
+
+    // ============ Toast ============
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+    }
+
+    // ============ Keyboard ============
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') fecharEdicao();
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'submit' && !document.getElementById('editModal').classList.contains('open')) {
+        simular();
+      }
+    });
+
+    // ============ First render ============
+    renderTrialBanner();
+    renderHistorico();
+  </script>
+</body>
+</html>

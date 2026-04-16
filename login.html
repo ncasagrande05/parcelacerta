@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0B0B0F">
+  <title>Entrar · ParcelaCerta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .auth-wrap {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 40px 20px;
+      position: relative;
+    }
+    .auth-wrap::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse at center, rgba(59,130,246,0.15), transparent 60%);
+      z-index: -1;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 4px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 24px;
+    }
+    .auth-tabs button {
+      padding: 9px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 6px;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .auth-tabs button.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 0 0 1px var(--border-strong);
+    }
+
+    .auth-form { display: none; flex-direction: column; gap: 14px; }
+    .auth-form.active { display: flex; }
+
+    .auth-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    .auth-subtitle {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-bottom: 12px;
+    }
+
+    .auth-error {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #FCA5A5;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      display: none;
+    }
+    .auth-error.show { display: block; }
+
+    .auth-foot {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    .proto-warn {
+      margin-top: 16px;
+      padding: 10px 12px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.2);
+      color: #FCD34D;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+    }
+    .back-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <a href="index.html" class="back-link">← Voltar</a>
+
+      <div class="auth-brand">
+        <div class="brand-logo">PC</div>
+        <div class="brand-text">
+          <div class="name">ParcelaCerta</div>
+          <div class="tag">Acesso do vendedor</div>
+        </div>
+      </div>
+
+      <div class="auth-tabs">
+        <button id="tab-login" class="active" onclick="switchTab('login')">Entrar</button>
+        <button id="tab-signup" onclick="switchTab('signup')">Criar conta</button>
+      </div>
+
+      <div id="error" class="auth-error"></div>
+
+      <!-- Login form -->
+      <form id="form-login" class="auth-form active" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" name="email" required placeholder="voce@sualoja.com">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" name="senha" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Entrar</button>
+      </form>
+
+      <!-- Signup form -->
+      <form id="form-signup" class="auth-form" onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label>Nome da loja</label>
+          <input type="text" name="lojaNome" required placeholder="Ex: G1 Veículos">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" name="email" required placeholder="voce@sualoja.com">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" name="senha" required minlength="4" placeholder="Mínimo 4 caracteres">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Criar conta grátis</button>
+      </form>
+
+      <div class="proto-warn">
+        <strong>Protótipo:</strong> dados salvos apenas no navegador. Não use senhas reais. Em produção, usaremos backend com autenticação segura.
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    // Se já logado, vai direto pro app
+    if (AUTH.getSession()) window.location.href = 'app.html';
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('tab') === 'signup') switchTab('signup');
+
+    function switchTab(tab) {
+      document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+      document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+      document.getElementById('form-login').classList.toggle('active', tab === 'login');
+      document.getElementById('form-signup').classList.toggle('active', tab === 'signup');
+      hideError();
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+    function hideError() { document.getElementById('error').classList.remove('show'); }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      hideError();
+      const data = Object.fromEntries(new FormData(e.target));
+      const res = AUTH.login(data);
+      if (!res.ok) return showError(res.error);
+      window.location.href = 'app.html';
+    }
+
+    function handleSignup(e) {
+      e.preventDefault();
+      hideError();
+      const data = Object.fromEntries(new FormData(e.target));
+      const res = AUTH.register(data);
+      if (!res.ok) return showError(res.error);
+      window.location.href = 'app.html';
+    }
+  </script>
+</body>
+</html>
