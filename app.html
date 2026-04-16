@@ -34,6 +34,37 @@
       margin-top: 4px;
     }
 
+    /* Mode tabs */
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .mode-tab {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-tab:hover { border-color: var(--border-strong); color: var(--text); }
+    .mode-tab.active {
+      background: var(--accent-soft);
+      border-color: rgba(59,130,246,0.4);
+      color: #93C5FD;
+    }
+    .mode-icon { font-size: 1.1rem; }
+
     /* Form column */
     .form-col .card + .card { margin-top: 12px; }
 
@@ -364,7 +395,16 @@
 
     <div class="hero-mini mt-4">
       <h1>Simulação rápida</h1>
-      <p>Informe os dados do veículo e cliente para gerar a parcela aproximada.</p>
+      <p id="heroDesc">Informe os dados do veículo e cliente para gerar a parcela aproximada.</p>
+    </div>
+
+    <div class="mode-tabs">
+      <button id="mode-normal" class="mode-tab active" onclick="setModo('normal')">
+        <span class="mode-icon">&#128178;</span> Valor → Parcela
+      </button>
+      <button id="mode-inverso" class="mode-tab" onclick="setModo('inverso')">
+        <span class="mode-icon">&#128260;</span> Parcela → Valor
+      </button>
     </div>
 
     <div id="trialBanner" class="billing-banner hidden">
@@ -397,8 +437,9 @@
         </div>
 
         <div class="card">
-          <div class="card-header"><span class="card-title">Veículo</span></div>
-          <div class="form-grid triple">
+          <div class="card-header"><span class="card-title" id="cardVeiculoTitle">Veículo</span></div>
+          <!-- Modo normal -->
+          <div id="modoNormal" class="form-grid triple">
             <div class="form-group">
               <label>Valor do Veículo (R$)</label>
               <input type="text" id="valorVeiculo" inputmode="decimal" placeholder="Ex: 50.000,00" oninput="formatarMoeda(this)">
@@ -418,9 +459,30 @@
               <input type="text" id="modelo" placeholder="Ex: HB20 2020">
             </div>
           </div>
+          <!-- Modo inverso -->
+          <div id="modoInverso" class="form-grid triple hidden">
+            <div class="form-group">
+              <label>Parcela desejada (R$)</label>
+              <input type="text" id="parcelaDesejada" inputmode="decimal" placeholder="Ex: 1.500,00" oninput="formatarMoeda(this)">
+            </div>
+            <div class="form-group">
+              <label>Parcelas</label>
+              <select id="parcelasInverso">
+                <option value="12">12x</option>
+                <option value="24">24x</option>
+                <option value="36">36x</option>
+                <option value="48" selected>48x</option>
+                <option value="60">60x</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Modelo (opcional)</label>
+              <input type="text" id="modeloInverso" placeholder="Ex: HB20 2020">
+            </div>
+          </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="entradaCard">
           <div class="card-header"><span class="card-title">Entrada</span></div>
           <div class="segmented">
             <button id="btn-sem" class="active" onclick="setEntrada('sem')">Sem</button>
@@ -463,7 +525,7 @@
           </div>
         </div>
 
-        <button id="btnSimular" class="btn btn-primary btn-block btn-lg mt-3" onclick="simular()">Calcular parcela aproximada</button>
+        <button id="btnSimular" class="btn btn-primary btn-block btn-lg mt-3" onclick="modoAtual==='normal'?simular():simularInverso()">Calcular parcela aproximada</button>
       </div>
 
       <!-- RESULT COLUMN -->
@@ -696,9 +758,35 @@
     document.getElementById('userAvatar').textContent = session.lojaIniciais;
 
     // ============ State ============
+    let modoAtual = 'normal';
     let entradaTipo = 'sem';
     let ultimaSimulacao = null; // { id, ... }
     let filtroHistorico = 'all';
+
+    // ============ Modo ============
+    function setModo(modo) {
+      modoAtual = modo;
+      document.getElementById('mode-normal').classList.toggle('active', modo === 'normal');
+      document.getElementById('mode-inverso').classList.toggle('active', modo === 'inverso');
+      document.getElementById('modoNormal').classList.toggle('hidden', modo !== 'normal');
+      document.getElementById('modoInverso').classList.toggle('hidden', modo !== 'inverso');
+
+      const btn = document.getElementById('btnSimular');
+      const desc = document.getElementById('heroDesc');
+      const entradaCard = document.getElementById('entradaCard');
+
+      if (modo === 'normal') {
+        btn.textContent = 'Calcular parcela aproximada';
+        desc.textContent = 'Informe os dados do veículo e cliente para gerar a parcela aproximada.';
+        document.getElementById('cardVeiculoTitle').textContent = 'Veículo';
+        if (entradaCard) entradaCard.classList.remove('hidden');
+      } else {
+        btn.textContent = 'Descobrir valor máximo do veículo';
+        desc.textContent = 'Informe a parcela que o cliente aceita pagar e descubra o valor máximo do veículo.';
+        document.getElementById('cardVeiculoTitle').textContent = 'Simulação inversa';
+        if (entradaCard) entradaCard.classList.add('hidden');
+      }
+    }
 
     // ============ Format ============
     function formatarMoeda(input) {
@@ -747,6 +835,69 @@
       return pv * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
     }
 
+    // Inverso: dada a parcela, achar o valor financiável (PV)
+    function calcularValorFinanciavel(parcela, taxa, n) {
+      const r = taxa / 100;
+      if (r === 0) return parcela * n;
+      return parcela * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
+    }
+
+    function simularInverso() {
+      if (trialBloqueado()) {
+        showToast('Limite de simulações do trial atingido');
+        return;
+      }
+      const parcelaDesejada = parseMoeda(document.getElementById('parcelaDesejada').value);
+      if (parcelaDesejada <= 0) return showToast('Informe a parcela desejada');
+
+      const nParcelas = parseInt(document.getElementById('parcelasInverso').value);
+      const taxa = APP_CONFIG.taxaMediaMensal;
+      const spread = APP_CONFIG.spreadFaixa;
+      const financiavel = calcularValorFinanciavel(parcelaDesejada, taxa, nParcelas);
+      const financiavelMin = calcularValorFinanciavel(parcelaDesejada, taxa * (1 + spread), nParcelas);
+      const financiavelMax = calcularValorFinanciavel(parcelaDesejada, taxa * (1 - spread), nParcelas);
+
+      const sim = {
+        id: 's_' + Date.now(),
+        data: new Date().toISOString(),
+        leadNome: document.getElementById('leadNome').value.trim(),
+        leadFone: document.getElementById('leadFone').value.trim(),
+        modelo: document.getElementById('modeloInverso').value.trim(),
+        valorVeiculo: financiavel,
+        entrada: 0,
+        financiado: financiavel,
+        nParcelas,
+        parcela: parcelaDesejada,
+        parcelaMin: parcelaDesejada,
+        parcelaMax: parcelaDesejada,
+        tipo: 'inverso',
+        financiavelMin,
+        financiavelMax,
+        status: 'pending',
+      };
+
+      ultimaSimulacao = sim;
+      salvarHistorico(sim);
+      AUTH.incrementSimulacoes(session.userId);
+      renderResultadoInverso(sim);
+      atualizarFunnelUI();
+      renderHistorico();
+      renderTrialBanner();
+      showToast('Simulação inversa gerada');
+    }
+
+    function renderResultadoInverso(sim) {
+      document.getElementById('resultEmpty').classList.add('hidden');
+      document.getElementById('resultCard').classList.remove('hidden');
+      document.getElementById('resParcela').textContent = formatBRL(sim.financiado);
+      document.getElementById('resSlash').textContent = ' valor máximo do veículo';
+      document.getElementById('resFaixa').textContent = `Faixa estimada: ${formatBRL(sim.financiavelMin)} – ${formatBRL(sim.financiavelMax)}`;
+      document.getElementById('resVeiculo').textContent = formatBRL(sim.financiado);
+      document.getElementById('resEntrada').textContent = 'Sem entrada';
+      document.getElementById('resFinanciado').textContent = formatBRL(sim.financiado);
+      document.getElementById('resPrazo').textContent = `${sim.nParcelas}x de ${formatBRL(sim.parcela)}`;
+    }
+
     function trialBloqueado() {
       const user = AUTH.getUser(session.userId);
       if (!user || user.plano !== 'trial') return false;
@@ -780,7 +931,7 @@
         banner.classList.remove('limit');
         text.innerHTML = `Você usou <strong>${usado} de ${limite}</strong> simulações gratuitas. Restam <strong>${restante}</strong>.`;
         btn.disabled = false;
-        btn.textContent = 'Calcular parcela aproximada';
+        btn.textContent = modoAtual === 'normal' ? 'Calcular parcela aproximada' : 'Descobrir valor máximo do veículo';
       }
 
       dots.innerHTML = Array.from({ length: limite }, (_, i) => {
@@ -1139,7 +1290,7 @@
         fecharModal('planoModal');
       }
       if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'submit' && !document.getElementById('editModal').classList.contains('open')) {
-        simular();
+        modoAtual === 'normal' ? simular() : simularInverso();
       }
     });
 
