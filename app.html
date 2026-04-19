@@ -525,6 +525,15 @@
           </div>
         </div>
 
+        <div class="card">
+          <div class="card-header"><span class="card-title">Comissão da loja</span></div>
+          <div class="form-group">
+            <label>% de volta para a loja</label>
+            <input type="number" id="comissao" min="0" max="50" step="0.5" value="0" placeholder="Ex: 5">
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Esse % é somado ao valor financiado — aumenta a parcela, não o valor do veículo.</div>
+          </div>
+        </div>
+
         <button id="btnSimular" class="btn btn-primary btn-block btn-lg mt-3" onclick="modoAtual==='normal'?simular():simularInverso()">Calcular parcela aproximada</button>
       </div>
 
@@ -545,6 +554,7 @@
             <div class="detail-item"><div class="k">Entrada</div><div class="v" id="resEntrada">—</div></div>
             <div class="detail-item"><div class="k">Financiado</div><div class="v" id="resFinanciado">—</div></div>
             <div class="detail-item"><div class="k">Prazo</div><div class="v" id="resPrazo">—</div></div>
+            <div class="detail-item" id="resComissaoItem" style="display:none"><div class="k">Comissão</div><div class="v" id="resComissao">—</div></div>
           </div>
 
           <div class="funnel-title">Resposta do cliente</div>
@@ -728,6 +738,11 @@
       </div>
 
       <div class="form-group mt-3">
+        <label>Comissão da loja (%)</label>
+        <input type="number" id="editComissao" min="0" max="50" step="0.5" value="0">
+      </div>
+
+      <div class="form-group mt-3">
         <label>Status do lead</label>
         <select id="editStatus">
           <option value="pending">Sem resposta</option>
@@ -814,6 +829,12 @@
       else if (tipo === 'ambos') document.getElementById('fields-ambos').classList.add('visible');
     }
 
+    function getComissao() {
+      const v = parseFloat(document.getElementById('comissao').value);
+      if (!isFinite(v) || v < 0) return 0;
+      return Math.min(v, 50);
+    }
+
     function calcularEntrada() {
       if (entradaTipo === 'dinheiro') return parseMoeda(document.getElementById('entradaDinheiro').value);
       if (entradaTipo === 'veiculo') {
@@ -857,13 +878,18 @@
       const financiavelMin = calcularValorFinanciavel(parcelaDesejada, taxa * (1 + spread), nParcelas);
       const financiavelMax = calcularValorFinanciavel(parcelaDesejada, taxa * (1 - spread), nParcelas);
 
+      const comissaoPct = getComissao();
+      const fator = 1 + comissaoPct / 100;
+      const valorVeiculo = financiavel / fator;
+      const comissaoValor = financiavel - valorVeiculo;
+
       const sim = {
         id: 's_' + Date.now(),
         data: new Date().toISOString(),
         leadNome: document.getElementById('leadNome').value.trim(),
         leadFone: document.getElementById('leadFone').value.trim(),
         modelo: document.getElementById('modeloInverso').value.trim(),
-        valorVeiculo: financiavel,
+        valorVeiculo,
         entrada: 0,
         financiado: financiavel,
         nParcelas,
@@ -871,8 +897,10 @@
         parcelaMin: parcelaDesejada,
         parcelaMax: parcelaDesejada,
         tipo: 'inverso',
-        financiavelMin,
-        financiavelMax,
+        financiavelMin: financiavelMin / fator,
+        financiavelMax: financiavelMax / fator,
+        comissaoPct,
+        comissaoValor,
         status: 'pending',
       };
 
@@ -889,13 +917,20 @@
     function renderResultadoInverso(sim) {
       document.getElementById('resultEmpty').classList.add('hidden');
       document.getElementById('resultCard').classList.remove('hidden');
-      document.getElementById('resParcela').textContent = formatBRL(sim.financiado);
+      document.getElementById('resParcela').textContent = formatBRL(sim.valorVeiculo);
       document.getElementById('resSlash').textContent = ' valor máximo do veículo';
       document.getElementById('resFaixa').textContent = `Faixa estimada: ${formatBRL(sim.financiavelMin)} – ${formatBRL(sim.financiavelMax)}`;
-      document.getElementById('resVeiculo').textContent = formatBRL(sim.financiado);
+      document.getElementById('resVeiculo').textContent = formatBRL(sim.valorVeiculo);
       document.getElementById('resEntrada').textContent = 'Sem entrada';
       document.getElementById('resFinanciado').textContent = formatBRL(sim.financiado);
       document.getElementById('resPrazo').textContent = `${sim.nParcelas}x de ${formatBRL(sim.parcela)}`;
+      const comItem = document.getElementById('resComissaoItem');
+      if (sim.comissaoValor > 0) {
+        comItem.style.display = '';
+        document.getElementById('resComissao').textContent = `${formatBRL(sim.comissaoValor)} (${sim.comissaoPct}%)`;
+      } else {
+        comItem.style.display = 'none';
+      }
     }
 
     function trialBloqueado() {
@@ -952,7 +987,10 @@
       const entrada = calcularEntrada();
       if (entrada >= valorVeiculo) return showToast('Entrada maior ou igual ao valor do veículo');
 
-      const financiado = valorVeiculo - entrada;
+      const financiadoBase = valorVeiculo - entrada;
+      const comissaoPct = getComissao();
+      const comissaoValor = financiadoBase * (comissaoPct / 100);
+      const financiado = financiadoBase + comissaoValor;
       const taxa = APP_CONFIG.taxaMediaMensal;
       const parcela = calcularParcela(financiado, taxa, nParcelas);
       const spread = APP_CONFIG.spreadFaixa;
@@ -966,6 +1004,7 @@
         leadFone: document.getElementById('leadFone').value.trim(),
         modelo: document.getElementById('modelo').value.trim(),
         valorVeiculo, entrada, financiado, nParcelas, parcela, parcelaMin, parcelaMax,
+        comissaoPct, comissaoValor,
         status: 'pending',
       };
 
@@ -989,6 +1028,13 @@
       document.getElementById('resEntrada').textContent = formatBRL(sim.entrada);
       document.getElementById('resFinanciado').textContent = formatBRL(sim.financiado);
       document.getElementById('resPrazo').textContent = `${sim.nParcelas}x`;
+      const comItem = document.getElementById('resComissaoItem');
+      if (sim.comissaoValor > 0) {
+        comItem.style.display = '';
+        document.getElementById('resComissao').textContent = `${formatBRL(sim.comissaoValor)} (${sim.comissaoPct}%)`;
+      } else {
+        comItem.style.display = 'none';
+      }
     }
 
     // ============ Histórico ============
@@ -1090,6 +1136,7 @@
       formatarValorNoInput(document.getElementById('editValor'), sim.valorVeiculo);
       formatarValorNoInput(document.getElementById('editEntrada'), sim.entrada);
       document.getElementById('editParcelas').value = sim.nParcelas;
+      document.getElementById('editComissao').value = sim.comissaoPct || 0;
       document.getElementById('editStatus').value = sim.status;
       document.getElementById('editModal').classList.add('open');
     }
@@ -1111,7 +1158,11 @@
       if (entrada >= valorVeiculo) return showToast('Entrada maior ou igual ao veículo');
 
       const nParcelas = parseInt(document.getElementById('editParcelas').value);
-      const financiado = valorVeiculo - entrada;
+      const financiadoBase = valorVeiculo - entrada;
+      const comissaoPctEdit = parseFloat(document.getElementById('editComissao').value) || 0;
+      const comissaoPct = Math.max(0, Math.min(50, comissaoPctEdit));
+      const comissaoValor = financiadoBase * (comissaoPct / 100);
+      const financiado = financiadoBase + comissaoValor;
       const taxa = APP_CONFIG.taxaMediaMensal;
       const parcela = calcularParcela(financiado, taxa, nParcelas);
       const spread = APP_CONFIG.spreadFaixa;
@@ -1126,6 +1177,8 @@
       sim.parcela = parcela;
       sim.parcelaMin = parcela * (1 - spread);
       sim.parcelaMax = parcela * (1 + spread);
+      sim.comissaoPct = comissaoPct;
+      sim.comissaoValor = comissaoValor;
       sim.status = document.getElementById('editStatus').value;
 
       setHistorico(h);
